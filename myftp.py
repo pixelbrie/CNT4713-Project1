@@ -5,9 +5,9 @@
 # Reading: https://unix.stackexchange.com/questions/93566/ls-command-in-ftp-not-working
 # Reading: https://stackoverflow.com/questions/14498331/what-should-be-the-ftp-response-to-pasv-command
 
-#import socket module
+# Import socket module
 from socket import *
-import sys # In order to terminate the program
+import sys # To terminate the program
 
 def quitFTP(clientSocket):
     # COMPLETE
@@ -31,8 +31,7 @@ def receiveData(clientSocket):
     data = dataIn.decode("utf-8")
     return data
 
-# If you use passive mode you may want to use this method but you have to complete it
-# You will not be penalized if you don't
+# Passive mode method
 def modePASV(clientSocket):
     command = "PASV" + "\r\n"
     # Complete
@@ -75,25 +74,22 @@ def main():
     print(dataIn)
 
     status = 0
-    
-    if dataIn.startswith(""):
+    if dataIn.startswith("220"):
         status = 220
-        print("Sending username")
-        # COMPLETE
-        
-        print(dataIn)
-
-        print("Sending password")
-        if dataIn.startswith(""):
-            status = 331
-            # COMPLETE
-            
-            print(dataIn)
-            if dataIn.startswith(""):
+        # Send 'user'
+        reply = sendCommand(clientSocket, "USER " + username + "\r\n")
+        print(reply)
+        if reply.startswith("331"):
+            # Send 'pass'
+            reply = sendCommand(clientSocket, "PASS " + password + "\r\n")
+            print(reply)
+            if reply.startswith("230"):
                 status = 230
+                print("Login successful.")
+            else:
+                print("Login failed.")
 
     if status == 230:
-        # It is your choice whether to use ACTIVE or PASV mode. In any event:
         # COMPLETE
         while True:
             userCmd = input("myftp> ").strip()
@@ -123,10 +119,8 @@ def main():
                 print("Unknown command")
     
     print("Disconnecting...")
-    
+    quitFTP(clientSocket)
     clientSocket.close()
-    dataSocket.close()
-    
-    sys.exit()#
+    sys.exit(0)
 
 main()

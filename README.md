@@ -13,9 +13,11 @@
   - Displays the server reply indicating success or failure
 
 ## Member 2
-- Name: ____________________  Student ID: ____________________
-- Task 1: ____________________
-- Task 2: ____________________
+- Name: Vladimir Fonte  Student ID: 6513651
+- Task 1: **USER command**
+  - Send the `USER <username>` from the TCP.
+- Task 2: **PASS command**
+  - Send the `PASS <password>` from the TCP and print success or failure.
 
 ## Member 3
 - Name: ____________________  Student ID: ____________________
