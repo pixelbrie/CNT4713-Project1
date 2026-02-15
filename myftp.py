@@ -6,7 +6,6 @@
 # Reading: https://stackoverflow.com/questions/14498331/what-should-be-the-ftp-response-to-pasv-command
 
 #import socket module
-#import socket module
 from socket import *
 import sys # In order to terminate the program
 
@@ -26,8 +25,6 @@ def sendCommand(socket, command):
     dataIn = socket.recv(1024)
     data = dataIn.decode("utf-8")
     return data
-
-
 
 def receiveData(clientSocket):
     dataIn = clientSocket.recv(1024)
@@ -58,13 +55,16 @@ def modePASV(clientSocket):
 
         dataSocket = socket(AF_INET, SOCK_STREAM)
         dataSocket.connect((ip, port))
-        
+
     return status, dataSocket
 
-    
-    
 def main():
     # COMPLETE
+
+    # client should be started by: python myftp.py server-name
+    if len(sys.argv) != 2:
+        print("Usage: python myftp.py <server>")
+        sys.exit()
 
     username = input("Enter the username: ")
     password = input("Enter the password: ")
@@ -72,70 +72,76 @@ def main():
     clientSocket = socket(AF_INET, SOCK_STREAM) # TCP socket
     # COMPLETE
 
-    HOST = # COMPLETE
-    # COMPLETE
+    HOST = sys.argv[1]  # COMPLETE
+    PORT = 21           # COMPLETE
+    clientSocket.connect((HOST, PORT))  # COMPLETE
 
     dataIn = receiveData(clientSocket)
     print(dataIn)
 
     status = 0
-    
-    if dataIn.startswith(""):
+
+    # --- LOGIN SECTION (your teammate can adjust this if needed) ---
+    if dataIn.startswith("220"):
         status = 220
         print("Sending username")
         # COMPLETE
-        
+        dataIn = sendCommand(clientSocket, "USER " + username + "\r\n")
         print(dataIn)
 
         print("Sending password")
-        if dataIn.startswith(""):
+        if dataIn.startswith("331"):
             status = 331
             # COMPLETE
-            
+            dataIn = sendCommand(clientSocket, "PASS " + password + "\r\n")
             print(dataIn)
-            if dataIn.startswith(""):
+
+            if dataIn.startswith("230"):
                 status = 230
 
-       
+    # --- AFTER LOGIN: COMMAND LOOP (ls/dir + cd + quit) ---
     if status == 230:
         # It is your choice whether to use ACTIVE or PASV mode. In any event:
         # COMPLETE
         while True:
             userCmd = input("myftp> ").strip()
 
-            #LIST: list contents
+            # LIST: Used to ask the server to send back a list of all the files in the current remote directory.
+            # The list of files is sent over a (new and non-persistent) data connection rather than the control TCP connection.
             if userCmd == "ls" or userCmd == "dir":
                 pasvStatus, dataSocket = modePASV(clientSocket)
                 if pasvStatus == 227:
                     # COMPLETE
                     reply = sendCommand(clientSocket, "LIST\r\n")
                     print(reply)
+
                     listing = dataSocket.recv(1024).decode("utf-8")
                     print(listing)
+
                     dataSocket.close()
+
                     finalReply = receiveData(clientSocket)
                     print(finalReply)
 
-            #CWD: change remote directory
+            # CWD pathname: Used to change the working directory on the server.
             elif userCmd.startswith("cd "):
                 pathname = userCmd[3:].strip()
                 # COMPLETE
                 reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
                 print(reply)
 
-            #QUIT: end session
+            # QUIT: end session
             elif userCmd == "quit":
                 break
 
             else:
-                print("Unknown command")
-    
-    print("Disconnecting...")
-    
-    quitFTP(clientSocket)
+                print("Unknown command (use ls/dir, cd <path>, quit)")
 
+    print("Disconnecting...")
+
+    quitFTP(clientSocket)
     clientSocket.close()
-    
-    sys.exit()#Terminate the program after sending the corresponding data
+
+    sys.exit() #Terminate the program after sending the corresponding data
 
 main()
