@@ -6,11 +6,13 @@
 # Reading: https://stackoverflow.com/questions/14498331/what-should-be-the-ftp-response-to-pasv-command
 
 #import socket module
+#import socket module
 from socket import *
 import sys # In order to terminate the program
 
 def quitFTP(clientSocket):
     # COMPLETE
+    command = "QUIT\r\n"
     dataOut = command.encode("utf-8")
     clientSocket.sendall(dataOut)
     dataIn = clientSocket.recv(1024)
@@ -20,6 +22,9 @@ def quitFTP(clientSocket):
 def sendCommand(socket, command):
     dataOut = command.encode("utf-8")
     # Complete
+    socket.sendall(dataOut)
+    dataIn = socket.recv(1024)
+    data = dataIn.decode("utf-8")
     return data
 
 
@@ -34,10 +39,24 @@ def receiveData(clientSocket):
 def modePASV(clientSocket):
     command = "PASV" + "\r\n"
     # Complete
+    clientSocket.sendall(command.encode("utf-8"))
+    data = clientSocket.recv(1024).decode("utf-8")
+    print(data)
+
     status = 0
-    if data.startswith(""):
+    dataSocket = None
+
+    if data.startswith("227"):
         status = 227
         # Complete
+        start = data.find("(") + 1
+        end = data.find(")")
+        nums = data[start:end].split(",")
+
+        ip = nums[0] + "." + nums[1] + "." + nums[2] + "." + nums[3]
+        port = int(nums[4]) * 256 + int(nums[5])
+
+        dataSocket = socket(AF_INET, SOCK_STREAM)
         dataSocket.connect((ip, port))
         
     return status, dataSocket
@@ -81,17 +100,42 @@ def main():
     if status == 230:
         # It is your choice whether to use ACTIVE or PASV mode. In any event:
         # COMPLETE
-        pasvStatus, dataSocket = modePASV(clientSocket)
-        if pasvStatus == 227:
-            # COMPLETE
+        while True:
+            userCmd = input("myftp> ").strip()
+
+            #LIST: list contents
+            if userCmd == "ls" or userCmd == "dir":
+                pasvStatus, dataSocket = modePASV(clientSocket)
+                if pasvStatus == 227:
+                    # COMPLETE
+                    reply = sendCommand(clientSocket, "LIST\r\n")
+                    print(reply)
+                    listing = dataSocket.recv(1024).decode("utf-8")
+                    print(listing)
+                    dataSocket.close()
+                    finalReply = receiveData(clientSocket)
+                    print(finalReply)
+
+            #CWD: change remote directory
+            elif userCmd.startswith("cd "):
+                pathname = userCmd[3:].strip()
+                # COMPLETE
+                reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
+                print(reply)
+
+            #QUIT: end session
+            elif userCmd == "quit":
+                break
+
+            else:
+                print("Unknown command")
     
     print("Disconnecting...")
     
+    quitFTP(clientSocket)
 
     clientSocket.close()
-    dataSocket.close()
     
     sys.exit()#Terminate the program after sending the corresponding data
 
 main()
-
