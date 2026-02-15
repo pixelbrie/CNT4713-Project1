@@ -20,9 +20,9 @@
   - Send the "pass" from the TCP and print success or failure.
 
 ## Member 3
-- Name: ____________________  Student ID: ____________________
-- Task 1: ____________________
-- Task 2: ____________________
+- Name: Daniel Adriazola  Student ID: 6369559
+- Task 1: RETR
+- Task 2: STOR
 
 ## Member 4
 - Name: ____________________  Student ID: ____________________
