@@ -25,9 +25,10 @@
 - Task 2: STOR
 
 ## Member 4
-- Name: ____________________  Student ID: ____________________
-- Task 1: ____________________
-- Task 2: ____________________
+- Name: Maddox Marin Student ID: 6206781
+- Task 1: DELETE function
+- Task 2: PUT function
+- Task 3: Get function
 
 
 
