@@ -112,6 +112,70 @@ def main():
                 reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
                 print(reply)
 
+            
+            # RETR
+            elif userCmd.startswith("get "):
+                parts = userCmd.split()
+                if len(parts) < 2:
+                    print("Usage: get <remote-file> [local-file]")
+                    continue
+                remoteFile = parts[1]
+                localFile = parts[2] if len(parts) >= 3 else os.path.basename(remoteFile)
+                pasvStatus, dataSocket = modePASV(clientSocket)
+                if pasvStatus != 227:
+                    print("ERROR: PASV failed; cannot RETR.")
+                    continue
+                reply = sendCommand(clientSocket, "RETR " + remoteFile + "\r\n")
+                print(reply)
+                # Expect 150 or 125 before data transfer
+                if not (reply.startswith("150") or reply.startswith("125")):
+                    dataSocket.close()
+                    print("ERROR: RETR not accepted by server.")
+                    continue
+                with open(localFile, "wb") as f:
+                    while True:
+                        chunk = dataSocket.recv(4096)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                dataSocket.close()
+                finalReply = receiveData(clientSocket)  # typically 226
+                print(finalReply)
+                print("Downloaded '{}' -> '{}'".format(remoteFile, localFile))
+
+            # STOR
+            elif userCmd.startswith("put "):
+                parts = userCmd.split()
+                if len(parts) < 2:
+                    print("Usage: put <local-file> [remote-file]")
+                    continue
+                localFile = parts[1]
+                remoteFile = parts[2] if len(parts) >= 3 else os.path.basename(localFile)
+                if not os.path.isfile(localFile):
+                    print("ERROR: Local file not found: {}".format(localFile))
+                    continue
+                pasvStatus, dataSocket = modePASV(clientSocket)
+                if pasvStatus != 227:
+                    print("ERROR: PASV failed; cannot STOR.")
+                    continue
+                reply = sendCommand(clientSocket, "STOR " + remoteFile + "\r\n")
+                print(reply)
+                # Expect 150 or 125 before data transfer
+                if not (reply.startswith("150") or reply.startswith("125")):
+                    dataSocket.close()
+                    print("ERROR: STOR not accepted by server.")
+                    continue
+                with open(localFile, "rb") as f:
+                    while True:
+                        chunk = f.read(4096)
+                        if not chunk:
+                            break
+                        dataSocket.sendall(chunk)
+                dataSocket.close()
+                finalReply = receiveData(clientSocket)  # typically 226
+                print(finalReply)
+                print("Uploaded '{}' -> '{}'".format(localFile, remoteFile))
+
             elif userCmd == "quit":
                 break
 
@@ -124,3 +188,4 @@ def main():
     sys.exit(0)
 
 main()
+
