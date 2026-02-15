@@ -8,6 +8,7 @@
 # Import socket module
 from socket import *
 import sys # To terminate the program
+import os
 
 def quitFTP(clientSocket):
     # COMPLETE
@@ -188,4 +189,5 @@ def main():
     sys.exit(0)
 
 main()
+
 
