@@ -35,104 +35,88 @@ def receiveData(clientSocket):
 # Passive mode method
 def modePASV(clientSocket):
     command = "PASV" + "\r\n"
-    # Complete
     clientSocket.sendall(command.encode("utf-8"))
     data = clientSocket.recv(1024).decode("utf-8")
     print(data)
 
-    status = 0
-    dataSocket = None
+    start = data.find("(") + 1
+    end = data.find(")")
+    nums = data[start:end].split(",")
 
-    if data.startswith("227"):
-        status = 227
-        # Complete
-        start = data.find("(") + 1
-        end = data.find(")")
-        nums = data[start:end].split(",")
+    ip = nums[0] + "." + nums[1] + "." + nums[2] + "." + nums[3]
+    port = int(nums[4]) * 256 + int(nums[5])
 
-        ip = nums[0] + "." + nums[1] + "." + nums[2] + "." + nums[3]
-        port = int(nums[4]) * 256 + int(nums[5])
+    dataSocket = socket(AF_INET, SOCK_STREAM)
+    dataSocket.connect((ip, port))
+    return dataSocket
 
-        dataSocket = socket(AF_INET, SOCK_STREAM)
-        dataSocket.connect((ip, port))
-        
-    return status, dataSocket
+def handleLS(clientSocket):
+    dataSocket = modePASV(clientSocket)
+    reply = sendCommand(clientSocket, "LIST\r\n")
+    print(reply)
+    listing = dataSocket.recv(1024).decode("utf-8")
+    print(listing)
+    dataSocket.close()
+    finalReply = receiveData(clientSocket)
+    print(finalReply)
+
+def handleCD(clientSocket, pathname):
+    reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
+    print(reply)
+
+def handleDelete(clientSocket, filename):
+    reply = sendCommand(clientSocket, "DELE " + filename + "\r\n")
+    print(reply)
+
+def handleGet(clientSocket, filename):
+    dataSocket = modePASV(clientSocket)
+    reply = sendCommand(clientSocket, "RETR " + filename + "\r\n")
+    print(reply)
+    fileData = dataSocket.recv(1024)
+    with open(filename, "wb") as file:
+        file.write(fileData)
+    print(f"File '{filename}' downloaded successfully.")
+    dataSocket.close()
+    finalReply = receiveData(clientSocket)
+    print(finalReply)
+
+def handlePut(clientSocket, filename):
+    dataSocket = modePASV(clientSocket)
+    reply = sendCommand(clientSocket, "STOR " + filename + "\r\n")
+    print(reply)
+    with open(filename, "rb") as file:
+        fileData = file.read(1024)
+        dataSocket.sendall(fileData)
+    print(f"File '{filename}' uploaded successfully.")
+    dataSocket.close()
+    finalReply = receiveData(clientSocket)
+    print(finalReply)
 
 def main():
-    # COMPLETE
+    clientSocket = socket(AF_INET, SOCK_STREAM)
+    clientSocket.connect((sys.argv[1], 21))
+    print(receiveData(clientSocket))
 
-    username = input("Enter the username: ")
-    password = input("Enter the password: ")
+    print(sendCommand(clientSocket, "USER " + input("Username: ") + "\r\n"))
+    print(sendCommand(clientSocket, "PASS " + input("Password: ") + "\r\n"))
 
-    clientSocket = socket(AF_INET, SOCK_STREAM) # TCP socket
-    # COMPLETE
+    while True:
+        cmd = input("myftp> ").strip()
+        
+        if cmd == "ls" or cmd == "dir":
+            handleLS(clientSocket)
+        elif cmd.startswith("cd "):
+            handleCD(clientSocket, cmd[3:].strip())
+        elif cmd.startswith("delete "):
+            handleDelete(clientSocket, cmd[7:].strip())
+        elif cmd.startswith("get "):
+            handleGet(clientSocket, cmd[4:].strip())
+        elif cmd.startswith("put "):
+            handlePut(clientSocket, cmd[4:].strip())
+        elif cmd == "quit":
+            break
 
-    HOST = sys.argv[1] # COMPLETE
-    PORT = 21 # COMPLETE
-    clientSocket.connect((HOST, PORT)) # COMPLETE
-
-    dataIn = receiveData(clientSocket)
-    print(dataIn)
-
-    status = 0
-    if dataIn.startswith("220"):
-        status = 220
-        # Send 'user'
-        reply = sendCommand(clientSocket, "USER " + username + "\r\n")
-        print(reply)
-        if reply.startswith("331"):
-            # Send 'pass'
-            reply = sendCommand(clientSocket, "PASS " + password + "\r\n")
-            print(reply)
-            if reply.startswith("230"):
-                status = 230
-                print("Login successful.")
-            else:
-                print("Login failed.")
-
-    if status == 230:
-        # COMPLETE
-        while True:
-            userCmd = input("myftp> ").strip()
-
-            if userCmd == "ls" or userCmd == "dir":
-                pasvStatus, dataSocket = modePASV(clientSocket)
-                if pasvStatus == 227:
-                    # COMPLETE
-                    reply = sendCommand(clientSocket, "LIST\r\n")
-                    print(reply)
-                    listing = dataSocket.recv(1024).decode("utf-8")
-                    print(listing)
-                    dataSocket.close()
-                    finalReply = receiveData(clientSocket)
-                    print(finalReply)
-
-            elif userCmd.startswith("cd "):
-                pathname = userCmd[3:].strip()
-                # COMPLETE
-                reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
-                print(reply)
-
-            elif userCmd.startswith("delete "):
-                filename = userCmd[7:].strip()
-                if filename:
-                    reply = sendCommand(clientSocket, "DELE " + filename + "\r\n")
-                    print(reply)
-                else:
-                    print("Usage: delete <filename>")
-
-            elif userCmd == "quit":
-                break
-
-            else:
-                print("Unknown command")
-    
-    print("Disconnecting...")
     quitFTP(clientSocket)
     clientSocket.close()
-    sys.exit(0)
 
 main()
-
-
-
