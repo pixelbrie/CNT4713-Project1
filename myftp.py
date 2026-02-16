@@ -113,6 +113,14 @@ def main():
                 reply = sendCommand(clientSocket, "CWD " + pathname + "\r\n")
                 print(reply)
 
+            elif userCmd.startswith("delete "):
+                filename = userCmd[7:].strip()
+                if filename:
+                    reply = sendCommand(clientSocket, "DELE " + filename + "\r\n")
+                    print(reply)
+                else:
+                    print("Usage: delete <filename>")
+
             elif userCmd == "quit":
                 break
 
