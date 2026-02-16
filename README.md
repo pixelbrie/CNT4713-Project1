@@ -1,4 +1,6 @@
 # Team Memebers & Delgated Tasks
+## Video Link
+- https://drive.google.com/file/d/1Z-Fp835PC1iwmT1NoGFRy0Irrh14zkfk/view?usp=sharing
 ## Languages
 - Python 3
 
